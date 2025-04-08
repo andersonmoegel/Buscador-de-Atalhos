@@ -1,30 +1,30 @@
-# Documentação do Script de Busca de Atalhos
+# Shortcut Search Script Documentation
 
-Este script é responsável por buscar atalhos no formato `.lnk` em pastas específicas, verificar se as palavras-chave estão presentes nos nomes dos arquivos, e salvar os resultados encontrados em um arquivo de saída. A busca é otimizada utilizando múltiplas threads.
+This script searches for `.lnk` shortcut files in specific folders, checks if keywords are present in the filenames, and saves the results in an output file. The search is optimized using multiple threads.
 
-## Funcionalidades
+## Features
 
-1. **Busca de atalhos nas pastas especificadas**: O script busca arquivos `.lnk` nas pastas e subpastas especificadas na lista `PASTAS_PARA_BUSCA`.
-2. **Filtragem de atalhos com palavras-chave**: A busca filtra os atalhos para verificar se o nome do arquivo contém alguma das palavras-chave especificadas na lista `PALAVRAS_CHAVE`.
-3. **Execução otimizada com múltiplas threads**: A busca é feita de maneira otimizada utilizando o módulo `concurrent.futures` para realizar buscas simultâneas em diferentes pastas.
-4. **Registro de resultados**: Os atalhos encontrados são salvos em um arquivo de log, localizado em `C:\\Windows\\Temp\\resultado_atalhos.txt`.
+1. **Search for shortcuts in specified folders**: The script searches for `.lnk` files in the folders and subfolders listed in `PASTAS_PARA_BUSCA`.
+2. **Filtering shortcuts with keywords**: The script filters shortcuts by checking if the filename contains any of the specified keywords in `PALAVRAS_CHAVE`.
+3. **Optimized execution with multithreading**: Uses the `concurrent.futures` module for concurrent searching in different folders.
+4. **Logging results**: Found shortcuts are saved in a log file at `C:\Windows\Temp\resultado_atalhos.txt`.
 
-## Estrutura do Código
+## Code Structure
 
-### 1. Importação de Bibliotecas
+### 1. Importing Libraries
 
 ```python
 import os
 import concurrent.futures
 ```
 
-Essas bibliotecas são usadas para manipulação de arquivos e diretórios, além de realizar a busca de forma otimizada:
-- **`os`**: Para manipulação de caminhos de arquivos e diretórios.
-- **`concurrent.futures`**: Para otimizar a busca utilizando múltiplas threads.
+Used for file and directory handling and optimized searching:
+- **`os`**: For manipulating file and directory paths.
+- **`concurrent.futures`**: To optimize the search using multiple threads.
 
-### 2. Variáveis de Configuração
+### 2. Configuration Variables
 
-#### Lista de palavras-chave para busca
+#### List of keywords for filtering
 
 ```python
 PALAVRAS_CHAVE = {p.lower() for p in [
@@ -35,36 +35,36 @@ PALAVRAS_CHAVE = {p.lower() for p in [
 ]}
 ```
 
-A lista `PALAVRAS_CHAVE` contém as palavras-chave (em minúsculas) que serão usadas para filtrar os atalhos durante a busca. A busca será feita nos nomes dos arquivos, verificando se algum termo da lista aparece no nome do atalho.
+This set contains lowercase keywords used to filter shortcuts by filename.
 
-#### Caminho do usuário e saída
+#### User path and output
 
 ```python
-USUARIO_ATUAL = os.getenv("USERPROFILE", "C:\\Users\\Default")
-OUTPUT_FILE = r"C:\\Windows\\Temp\\resultado_atalhos.txt"
+USUARIO_ATUAL = os.getenv("USERPROFILE", "C:\Users\Default")
+OUTPUT_FILE = r"C:\Windows\Temp\resultado_atalhos.txt"
 ```
 
-- **`USUARIO_ATUAL`**: Obtém o caminho do perfil do usuário atual no sistema (padrão: `C:\\Users\\Default`).
-- **`OUTPUT_FILE`**: Caminho do arquivo de saída onde os atalhos encontrados serão registrados.
+- **`USUARIO_ATUAL`**: Gets the current user's profile path (default: `C:\Users\Default`).
+- **`OUTPUT_FILE`**: Path to the output file where results are saved.
 
-#### Pastas de busca
+#### Search folders
 
 ```python
 PASTAS_PARA_BUSCA = [
-    USUARIO_ATUAL, "C:\\ProgramData\\Microsoft\\Windows\\Start Menu",
-    "D:\\Users", "E:\\Users"
+    USUARIO_ATUAL, "C:\ProgramData\Microsoft\Windows\Start Menu",
+    "D:\Users", "E:\Users"
 ]
 ```
 
-A lista `PASTAS_PARA_BUSCA` contém as pastas onde o script irá procurar pelos atalhos. Ela inclui o diretório do usuário atual e outros diretórios de usuários e menu de inicialização do Windows.
+These folders will be searched recursively for `.lnk` files.
 
-### 3. Funções
+### 3. Functions
 
 #### `buscar_atalhos_em_pasta(pasta)`
 
 ```python
 def buscar_atalhos_em_pasta(pasta):
-    """Busca atalhos (.lnk) em uma pasta e subpastas."""
+    """Searches for `.lnk` shortcuts in a folder and its subfolders."""
     encontrados = []
     try:
         for root, _, files in os.walk(pasta, followlinks=True):
@@ -72,32 +72,32 @@ def buscar_atalhos_em_pasta(pasta):
                 os.path.join(root, f) for f in files if f.endswith(".lnk") and any(p in f.lower() for p in PALAVRAS_CHAVE)
             )
     except Exception:
-        pass  # Ignora erros de acesso
+        pass
     return encontrados
 ```
 
-Esta função percorre uma pasta e suas subpastas, procurando por arquivos com extensão `.lnk`. Para cada atalho encontrado, o script verifica se o nome do arquivo contém alguma das palavras-chave na lista `PALAVRAS_CHAVE`. Se sim, o atalho é adicionado à lista de resultados.
+Searches for `.lnk` files in a directory and checks if filenames match any keyword.
 
 #### `salvar_resultado(atalhos)`
 
 ```python
 def salvar_resultado(atalhos):
-    """Salva os atalhos encontrados no arquivo, se houver."""
+    """Saves found shortcuts to the output file."""
     if atalhos:
         try:
             with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
                 f.write("; ".join(atalhos) + ";")
         except Exception:
-            pass  # Ignora erros ao salvar
+            pass
 ```
 
-Esta função recebe a lista de atalhos encontrados e os grava no arquivo de saída `resultado_atalhos.txt`. Os atalhos são salvos como uma string, separados por ponto e vírgula.
+Saves the list of found shortcuts to the output file.
 
 #### `processar_busca()`
 
 ```python
 def processar_busca():
-    """Executa a busca de forma otimizada usando threads."""
+    """Runs the search using multithreading."""
     atalhos_encontrados = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
         resultados = executor.map(buscar_atalhos_em_pasta, PASTAS_PARA_BUSCA)
@@ -106,27 +106,27 @@ def processar_busca():
     salvar_resultado(atalhos_encontrados)
 ```
 
-Esta função realiza a busca de atalhos nas pastas definidas em `PASTAS_PARA_BUSCA`. Ela utiliza um pool de threads, permitindo que várias pastas sejam processadas simultaneamente, o que melhora o desempenho. Após obter os resultados, ela chama a função `salvar_resultado()` para gravar os atalhos encontrados no arquivo de saída.
+Searches all configured folders concurrently and saves the results.
 
-### 4. Execução do Script
+### 4. Script Execution
 
 ```python
 if __name__ == "__main__":
     processar_busca()
 ```
 
-Esta linha garante que o script será executado apenas quando for chamado diretamente (não quando importado como módulo). Ela chama a função `processar_busca()` para iniciar a busca e salvar os resultados.
+Ensures the script only runs when executed directly.
 
-## Uso
+## Usage
 
-1. **Executar o script**: Para rodar o script, basta executá-lo em um ambiente Python. Ele irá buscar os atalhos nas pastas especificadas e gravar os resultados no arquivo de saída.
-2. **Verificar o arquivo de resultado**: Após a execução, o arquivo de saída `resultado_atalhos.txt`, localizado em `C:\\Windows\\Temp\\`, pode ser verificado para visualizar os atalhos encontrados.
+1. **Run the script**: Execute in a Python environment. It will search and log results to the output file.
+2. **Check the output**: The file `resultado_atalhos.txt` in `C:\Windows\Temp\` will contain the results.
 
-## Possíveis Melhorias
+## Possible Improvements
 
-- **Aprimoramento na gestão de erros**: O script poderia registrar detalhes dos erros (ex.: erros de acesso a pastas) em um arquivo de log para facilitar o diagnóstico de problemas.
-- **Filtros adicionais**: A busca poderia ser aprimorada com filtros adicionais, como data de criação ou modificação dos atalhos.
+- **Better error logging**: The script could log errors (e.g., permission issues) for debugging.
+- **Additional filters**: Filter by creation or modification date could be added.
 
-## Conclusão
+## Conclusion
 
-Este script proporciona uma forma eficiente e otimizada de buscar atalhos no sistema, filtrando-os de acordo com palavras-chave específicas. A utilização de múltiplas threads ajuda a melhorar o desempenho da busca em várias pastas simultaneamente.
+This script efficiently searches for shortcut files in the system and filters them using specific keywords. Multithreading improves performance when searching multiple folders.
